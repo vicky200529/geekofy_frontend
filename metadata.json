@@ -1,0 +1,7 @@
+{
+  "name": "Geekofy",
+  "description": "A modern service-discovery platform for all your tech repair and maintenance needs.",
+  "requestFramePermissions": [
+    "geolocation"
+  ]
+}
