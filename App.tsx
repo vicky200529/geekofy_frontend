@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import Header from './components/Header';
 import Hero from './components/Hero';
 import Categories from './components/Categories';
+import FAQSection from './components/FAQSection';
 import Footer from './components/Footer';
 import Dashboard from './components/Dashboard';
 
@@ -17,15 +18,18 @@ const App: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col bg-blue-50">
       <Header onAuthSuccess={handleAuthSuccess} />
       <main className="flex-grow">
         <Hero />
         <Categories />
+        <FAQSection />
+        
         {/* Decorative background elements */}
         <div className="fixed inset-0 pointer-events-none -z-10 overflow-hidden">
-          <div className="absolute -top-[10%] -left-[10%] w-[40%] h-[40%] bg-blue-100 rounded-full blur-3xl opacity-50"></div>
-          <div className="absolute top-[60%] -right-[10%] w-[35%] h-[35%] bg-indigo-100 rounded-full blur-3xl opacity-50"></div>
+          <div className="absolute -top-[10%] -left-[10%] w-[50%] h-[50%] bg-blue-200 rounded-full blur-[120px] opacity-40"></div>
+          <div className="absolute top-[50%] -right-[10%] w-[40%] h-[40%] bg-indigo-200 rounded-full blur-[100px] opacity-30"></div>
+          <div className="absolute top-[20%] left-[60%] w-[20%] h-[20%] bg-blue-300 rounded-full blur-[80px] opacity-20"></div>
         </div>
       </main>
       <Footer />

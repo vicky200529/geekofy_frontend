@@ -55,7 +55,8 @@ const ChatSection: React.FC = () => {
 
     try {
       setIsConnecting(true);
-      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
+      // Fix: Direct use of process.env.API_KEY as per initialization rules
+      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
       
       audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 24000 });
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -78,12 +79,14 @@ const ChatSection: React.FC = () => {
               const inputData = e.inputBuffer.getChannelData(0);
               const int16 = new Int16Array(inputData.length);
               for (let i = 0; i < inputData.length; i++) int16[i] = inputData[i] * 32768;
+              // Initiate data streaming after session resolves to prevent race conditions
               sessionPromise.then(s => s.sendRealtimeInput({ media: { data: encode(new Uint8Array(int16.buffer)), mimeType: 'audio/pcm;rate=16000' } }));
             };
             source.connect(processor);
             processor.connect(inputCtx.destination);
           },
           onmessage: async (msg: LiveServerMessage) => {
+            // Fix: Enhanced model turn handling with source tracking and interruption support
             const base64Audio = msg.serverContent?.modelTurn?.parts[0]?.inlineData?.data;
             if (base64Audio && audioContextRef.current) {
               const ctx = audioContextRef.current;
@@ -92,9 +95,23 @@ const ChatSection: React.FC = () => {
               const source = ctx.createBufferSource();
               source.buffer = buffer;
               source.connect(ctx.destination);
+              // Clean up reference when audio ends
+              source.addEventListener('ended', () => {
+                sourcesRef.current.delete(source);
+              });
               source.start(nextStartTimeRef.current);
               nextStartTimeRef.current += buffer.duration;
               sourcesRef.current.add(source);
+            }
+
+            // Fix: Handle session interruptions (Barge-in support)
+            const interrupted = msg.serverContent?.interrupted;
+            if (interrupted) {
+              for (const source of sourcesRef.current.values()) {
+                source.stop();
+                sourcesRef.current.delete(source);
+              }
+              nextStartTimeRef.current = 0;
             }
           },
           onclose: () => setIsVoiceActive(false),

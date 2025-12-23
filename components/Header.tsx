@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { Menu, X, PlusCircle } from 'lucide-react';
+import { Menu, X, PlusCircle, HelpCircle } from 'lucide-react';
 import Auth from './Auth';
 import Onboarding from './Onboarding';
 
@@ -31,31 +31,40 @@ const Header: React.FC<HeaderProps> = ({ onAuthSuccess }) => {
     onAuthSuccess?.();
   };
 
+  const scrollToSection = (id: string) => {
+    const el = document.getElementById(id);
+    if (el) el.scrollIntoView({ behavior: 'smooth' });
+    setIsMenuOpen(false);
+  };
+
   return (
     <>
-      <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-gray-100">
+      <header className="sticky top-0 z-50 bg-blue-50/80 backdrop-blur-md border-b border-blue-100">
         <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
-            <div className="flex-shrink-0 flex items-center cursor-pointer" onClick={() => window.scrollTo({top: 0, behavior: 'smooth'})}>
-              <span className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-indigo-700 tracking-tight">
+            <div className="flex-shrink-0 flex items-center cursor-pointer hover:scale-105 transition-transform" onClick={() => window.scrollTo({top: 0, behavior: 'smooth'})}>
+              <span className="text-2xl font-black bg-clip-text text-transparent bg-gradient-to-r from-blue-500 via-blue-700 to-blue-900 tracking-tight">
                 Geekofy
               </span>
             </div>
 
             <div className="hidden md:flex items-center space-x-8 text-sm font-medium">
-              <button onClick={openOnboarding} className="flex items-center text-gray-600 hover:text-blue-600 transition-colors gap-2">
-                <PlusCircle size={18} /> List Your Business
+              <button onClick={() => scrollToSection('faq')} className="flex items-center text-blue-700 hover:text-blue-900 transition-all hover:scale-105 gap-2">
+                <HelpCircle size={18} className="text-blue-500" /> FAQ
               </button>
-              <button onClick={() => openAuth('login')} className="text-gray-600 hover:text-blue-600 transition-colors">
+              <button onClick={openOnboarding} className="flex items-center text-blue-700 hover:text-blue-900 transition-all hover:scale-105 gap-2">
+                <PlusCircle size={18} className="text-blue-500" /> List Your Business
+              </button>
+              <button onClick={() => openAuth('login')} className="text-blue-700 hover:text-blue-900 transition-all hover:scale-105">
                 Login
               </button>
-              <button onClick={() => openAuth('signup')} className="px-5 py-2.5 bg-blue-600 text-white rounded-full hover:bg-blue-700 transition-all shadow-md hover:shadow-lg active:scale-95">
+              <button onClick={() => openAuth('signup')} className="px-5 py-2.5 bg-blue-600 text-white rounded-full hover:bg-blue-700 transition-all shadow-md hover:shadow-lg hover:scale-105 active:scale-95">
                 Sign Up
               </button>
             </div>
 
             <div className="md:hidden flex items-center">
-              <button onClick={() => setIsMenuOpen(!isMenuOpen)} className="text-gray-500 hover:text-gray-700 focus:outline-none">
+              <button onClick={() => setIsMenuOpen(!isMenuOpen)} className="text-blue-700 hover:text-blue-900 focus:outline-none transition-transform hover:scale-110">
                 {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
               </button>
             </div>
@@ -63,10 +72,11 @@ const Header: React.FC<HeaderProps> = ({ onAuthSuccess }) => {
         </nav>
 
         {isMenuOpen && (
-          <div className="md:hidden bg-white border-b border-gray-100 py-4 px-4 space-y-4 shadow-xl">
-            <button onClick={openOnboarding} className="block w-full text-left text-gray-600 text-lg font-medium">List Your Business</button>
-            <button onClick={() => openAuth('login')} className="block w-full text-left text-gray-600 text-lg font-medium">Login</button>
-            <button onClick={() => openAuth('signup')} className="block w-full text-center px-4 py-3 bg-blue-600 text-white rounded-xl font-semibold shadow-lg">Sign Up</button>
+          <div className="md:hidden bg-blue-50 border-b border-blue-100 py-4 px-4 space-y-4 shadow-xl animate-in slide-in-from-top-4">
+            <button onClick={() => scrollToSection('faq')} className="block w-full text-left text-blue-700 text-lg font-medium hover:pl-2 transition-all">FAQ</button>
+            <button onClick={openOnboarding} className="block w-full text-left text-blue-700 text-lg font-medium hover:pl-2 transition-all">List Your Business</button>
+            <button onClick={() => openAuth('login')} className="block w-full text-left text-blue-700 text-lg font-medium hover:pl-2 transition-all">Login</button>
+            <button onClick={() => openAuth('signup')} className="block w-full text-center px-4 py-3 bg-blue-600 text-white rounded-xl font-semibold shadow-lg active:scale-95">Sign Up</button>
           </div>
         )}
       </header>

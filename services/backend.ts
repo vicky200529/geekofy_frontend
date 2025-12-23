@@ -1,7 +1,7 @@
 
 /**
  * Simulated Backend Service for Geekofy
- * Manages authentication, OTP generation, social identity, and business onboarding.
+ * Structure ready for MongoDB/PostgreSQL API integration.
  */
 
 export interface AuthResponse {
@@ -9,6 +9,15 @@ export interface AuthResponse {
   message?: string;
   user?: any;
   errorField?: 'email' | 'password' | 'otp' | 'general';
+}
+
+export interface FAQ {
+  id: string;
+  question: string;
+  answer: string | null;
+  author: string;
+  date: string;
+  category: string;
 }
 
 export interface OnboardingData {
@@ -20,114 +29,149 @@ export interface OnboardingData {
 }
 
 class BackendService {
-  private mockUsers = [
-    { email: 'test@geekofy.com', phone: '1234567890', password: 'password123' }
-  ];
+  // In a real production app, you would use this URI in your Node.js/Bun server.
+  // Never expose raw DB URIs in the frontend. 
+  // This service mimics calling an API that talks to MongoDB.
+  private API_BASE = "https://api.geekofy.com/v1"; 
 
-  private registeredBusinessIds = ['geek-central', 'tech-fixers', 'apple-care'];
+  private getStorage<T>(key: string, defaultVal: T): T {
+    const saved = localStorage.getItem(`geekofy_${key}`);
+    return saved ? JSON.parse(saved) : defaultVal;
+  }
+
+  private setStorage(key: string, val: any) {
+    localStorage.setItem(`geekofy_${key}`, JSON.stringify(val));
+  }
 
   /**
-   * Login with email/phone and password
+   * Authentication
    */
   async login(identifier: string, password: string): Promise<AuthResponse> {
     return new Promise((resolve) => {
       setTimeout(() => {
-        const user = this.mockUsers.find(u => u.email === identifier || u.phone === identifier);
+        // Fix: Added phone property to default user object to resolve type error and used explicit generic for getStorage
+        const users = this.getStorage<{email: string; password: string; phone?: string}[]>('users', [{ email: 'test@geekofy.com', password: 'password123', phone: '1234567890' }]);
+        const user = users.find(u => u.email === identifier || u.phone === identifier);
         
         if (!user) {
           resolve({ success: false, message: 'User not found.', errorField: 'email' });
         } else if (user.password !== password) {
-          resolve({ success: false, message: 'Invalid password. Please try again.', errorField: 'password' });
+          resolve({ success: false, message: 'Invalid password.', errorField: 'password' });
         } else {
           resolve({ success: true, user: { email: user.email } });
-        }
-      }, 1000);
-    });
-  }
-
-  /**
-   * Request OTP for Signup or Passwordless Login
-   */
-  async requestOtp(identifier: string): Promise<AuthResponse> {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        console.log(`[Backend] Sending OTP to ${identifier}: 123456`);
-        resolve({ success: true, message: 'OTP sent successfully.' });
-      }, 1200);
-    });
-  }
-
-  /**
-   * Verify the 6-digit OTP
-   */
-  async verifyOtp(code: string): Promise<AuthResponse> {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        if (code === '123456') {
-          resolve({ success: true, user: { email: 'newuser@example.com' } });
-        } else {
-          resolve({ success: false, message: 'Invalid OTP code.', errorField: 'otp' });
         }
       }, 800);
     });
   }
 
-  /**
-   * Initiate Social Login
-   */
-  async socialLogin(provider: 'Google' | 'Apple'): Promise<void> {
-    console.log(`[Backend] Redirecting to ${provider} OAuth...`);
-    return new Promise(resolve => setTimeout(resolve, 500));
-  }
-
-  /**
-   * Forgot Password request
-   */
-  async resetPasswordRequest(identifier: string): Promise<AuthResponse> {
+  async requestOtp(identifier: string): Promise<AuthResponse> {
     return new Promise((resolve) => {
       setTimeout(() => {
-        resolve({ success: true, message: 'Reset instructions sent to your email/phone.' });
+        console.log(`[Database] Storing pending OTP for ${identifier}`);
+        resolve({ success: true });
       }, 1000);
     });
   }
 
-  /**
-   * Check if a Business ID is already taken
-   */
-  async isBusinessIdAvailable(id: string): Promise<boolean> {
+  async verifyOtp(code: string): Promise<AuthResponse> {
     return new Promise((resolve) => {
       setTimeout(() => {
-        resolve(!this.registeredBusinessIds.includes(id.toLowerCase()));
+        if (code === '123456') resolve({ success: true });
+        else resolve({ success: false, message: 'Invalid OTP', errorField: 'otp' });
+      }, 800);
+    });
+  }
+
+  // Fix: Added missing resetPasswordRequest method used in Auth.tsx
+  async resetPasswordRequest(identifier: string): Promise<void> {
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        console.log(`[Database] Reset link sent for ${identifier}`);
+        resolve();
       }, 500);
     });
   }
 
   /**
-   * Generate a random unique business ID
+   * FAQ Persistence Logic (MongoDB / Postgres style)
    */
-  async generateUniqueId(name: string): Promise<string> {
-    const base = name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
-    let candidate = base || 'geek';
-    let counter = 1;
-    
-    while (this.registeredBusinessIds.includes(candidate)) {
-      candidate = `${base}-${Math.floor(Math.random() * 10000)}`;
-      counter++;
-    }
-    return candidate;
+  async getFaqs(): Promise<FAQ[]> {
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        const faqs = this.getStorage<FAQ[]>('faqs', [
+          { id: '1', question: 'Do you offer warranty on screen repairs?', answer: 'Yes, we provide a 6-month limited warranty on all screen replacements.', author: 'Owner', date: '2023-10-01', category: 'General' },
+          { id: '2', question: 'How long does a battery replacement take?', answer: null, author: 'User88', date: '2023-10-25', category: 'Mobile' }
+        ]);
+        resolve(faqs);
+      }, 500);
+    });
+  }
+
+  async askQuestion(question: string, category: string): Promise<{ success: boolean }> {
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        const faqs = this.getStorage<FAQ[]>('faqs', []);
+        const newFaq: FAQ = {
+          id: Date.now().toString(),
+          question,
+          answer: null,
+          author: 'Anonymous User',
+          date: new Date().toISOString().split('T')[0],
+          category
+        };
+        this.setStorage('faqs', [newFaq, ...faqs]);
+        resolve({ success: true });
+      }, 1000);
+    });
+  }
+
+  async answerQuestion(id: string, answer: string): Promise<{ success: boolean }> {
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        const faqs = this.getStorage<FAQ[]>('faqs', []);
+        const index = faqs.findIndex(f => f.id === id);
+        if (index !== -1) {
+          faqs[index].answer = answer;
+          this.setStorage('faqs', faqs);
+        }
+        resolve({ success: true });
+      }, 1000);
+    });
   }
 
   /**
-   * Final onboarding submission
+   * Business Management
    */
+  async isBusinessIdAvailable(id: string): Promise<boolean> {
+    const businesses = this.getStorage('businesses', ['geek-central']);
+    return !businesses.includes(id.toLowerCase());
+  }
+
+  // Fix: Added missing generateUniqueId method used in Onboarding.tsx
+  async generateUniqueId(businessName: string): Promise<string> {
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        const base = businessName.toLowerCase().replace(/\s+/g, '-');
+        const random = Math.floor(Math.random() * 1000);
+        resolve(`${base}-${random}`);
+      }, 500);
+    });
+  }
+
   async submitOnboarding(data: OnboardingData): Promise<{ success: boolean }> {
     return new Promise((resolve) => {
       setTimeout(() => {
-        console.log('[Backend] New Business Registered:', data);
-        this.registeredBusinessIds.push(data.businessId);
+        const businesses = this.getStorage('businesses', []);
+        businesses.push(data.businessId);
+        this.setStorage('businesses', businesses);
+        this.setStorage(`biz_${data.businessId}`, data);
         resolve({ success: true });
-      }, 2000);
+      }, 1500);
     });
+  }
+
+  async socialLogin(provider: string): Promise<void> {
+    return new Promise(resolve => setTimeout(resolve, 500));
   }
 }
 
